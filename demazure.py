@@ -127,26 +127,27 @@ def create_element_cache(n):
     dim = sum(range(n))
 
     #create table in database
-    path_name = __file__[:__file__.find("Demazure.py")-1]
-    rel_path_name = path.relpath(path_name)
-    db_name = path.join(rel_path_name,"S_nWords.sqlite")
+    # path_name = __file__[:__file__.find("Demazure.py")-1]
+    # rel_path_name = path.relpath(path_name)
+    # db_name = path.join(rel_path_name,"S_n.sqlite")
+    db_name = "S_n.sqlite"
     with sqlite3.connect(db_name) as conn:
         cur = conn.cursor()
         cur.execute("""
-        CREATE TABLE S_nLengths (
+        CREATE TABLE Lengths (
             element TEXT PRIMARY KEY,
             n_value INT,
             length INT
         )
         """)
         cur.execute("""
-        CREATE TABLE S_nWords (
+        CREATE TABLE Words (
             element TEXT,
             n_value INT,
             word LIST,
             PRIMARY KEY (word,n_value),
-            FOREIGN KEY (element) REFERENCES S_nLengths(element),
-            FOREIGN KEY (n_value) REFERENCES S_nLengths(n_value)
+            FOREIGN KEY (element) REFERENCES Lengths(element),
+            FOREIGN KEY (n_value) REFERENCES Lengths(n_value)
         )
         """)
         conn.commit()
@@ -155,7 +156,7 @@ def create_element_cache(n):
     with sqlite3.connect(db_name) as conn:
         cur = conn.cursor()
         cur.execute("""
-        INSERT INTO S_nLengths (
+        INSERT INTO Lengths (
             n_value,
             element,
             length
@@ -163,7 +164,7 @@ def create_element_cache(n):
         VALUES (?,?,?)
         """,(n,ascii_lowercase[:n],0))
         cur.execute("""
-        INSERT INTO S_nWords (
+        INSERT INTO Words (
             n_value,
             element,
             word
@@ -177,7 +178,7 @@ def create_element_cache(n):
             cur = conn.cursor()
             cur.execute("""
             SELECT element
-            FROM S_nLengths
+            FROM Lengths
             WHERE n_value = ? AND length = ?
             """,(n,length-1))
             check = cur.fetchall()
@@ -185,7 +186,7 @@ def create_element_cache(n):
             cur = conn.cursor()
             cur.execute("""
             SELECT element
-            FROM S_nLengths
+            FROM Lengths
             WHERE n_value = ? and length = ?
             """,(n,length))
             build = cur.fetchall()
@@ -194,7 +195,7 @@ def create_element_cache(n):
                 cur = conn.cursor()
                 cur.execute("""
                 SELECT word
-                FROM S_nWords
+                FROM Words
                 WHERE n_value = ? and element = ?
                 """,(n,old_element))
                 old_words = cur.fetchall()
@@ -208,7 +209,7 @@ def create_element_cache(n):
                         with sqlite3.connect(db_name) as conn:
                             cur = conn.cursor()
                             cur.execute("""
-                            INSERT INTO S_nLengths (
+                            INSERT INTO Lengths (
                                 n_value,
                                 element,
                                 length
@@ -219,7 +220,7 @@ def create_element_cache(n):
                         with sqlite3.connect(db_name) as conn:
                             cur = conn.cursor()
                             cur.execute("""
-                            INSERT INTO S_nWords (
+                            INSERT INTO Words (
                                 n_value,
                                 element,
                                 word
