@@ -139,7 +139,6 @@ def create_element_cache(n):
                     S_n = S_n.append(pandas.Series(data={"length":length+1,"word":new_word},
                         name = new_element))
     return S_n
-create_element_cache(3)
 
 if __name__ == "__main__":
     import doctest
