@@ -1,11 +1,13 @@
 Functionality
--product of generators in S_n
+-product of generators in S_n (done)
 -lengths of expessions in S_n
 -list of all reduced words for an element of S_n?
 -Demazure product of generators
 -print/evaluate f_w for a given expression w
 -list of subwords of a given word multiplying to a given element
 -list of subwords producing non-trivial fibers for a given word
+-graphing of images/fibers?
+-auto-detect value of n
 
 Display
 -print and file output options

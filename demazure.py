@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from string import ascii_lowercase
-
+import pandas
 
 def identify_n(word):
     """
@@ -94,6 +94,52 @@ def standard_product(word, n=None):
         else:
             element[i-1],element[i]=element[i],element[i-1]
     return ob_join(element)
+
+def create_element_cache(n):
+    """
+    creates a csv containing a list of elements of S_n
+
+    Paramenters
+    ----------
+    n : int
+
+    Returns
+    ----------
+    str
+        name of the file where the data is stored
+
+    Raises
+    ----------
+    ValueError
+        if n is less than 2
+
+    NotImplementedError
+        if n is greater than 26
+    """
+    if not isinstance(n,int):
+        raise TypeError("n must be an integer")
+    if n < 2:
+        raise ValueError("n must be greater than 2")
+    if n > 26:
+        raise NotImplementedError("module only implemented for $n\leq 26$")
+
+    dim = sum(range(n))
+    S_n = pandas.DataFrame([[ascii_lowercase[:n],0,[]]], columns = ["element","length","word"])
+    S_n = S_n.set_index("element")
+    for length in range(dim):
+        build_from = S_n.loc[S_n.loc[:,"length"] == length]
+        for old_element in build_from.index:
+            old_word = list(S_n.at[old_element,"word"])
+            for i in range(1,n):
+                new_word = old_word+[i]
+                new_element = standard_product(new_word,n)
+                if new_element in S_n.index:
+                    pass
+                else:
+                    S_n = S_n.append(pandas.Series(data={"length":length+1,"word":new_word},
+                        name = new_element))
+    return S_n
+create_element_cache(3)
 
 if __name__ == "__main__":
     import doctest
