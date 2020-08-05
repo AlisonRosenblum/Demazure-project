@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+
+import sqlite3
 from string import ascii_lowercase
-import pandas
+from os import path
 
 def identify_n(word):
     """
@@ -105,8 +107,8 @@ def create_element_cache(n):
 
     Returns
     ----------
-    str
-        name of the file where the data is stored
+    bool
+        true if completed successfully
 
     Raises
     ----------
@@ -122,23 +124,109 @@ def create_element_cache(n):
         raise ValueError("n must be greater than 2")
     if n > 26:
         raise NotImplementedError("module only implemented for $n\leq 26$")
-
     dim = sum(range(n))
-    S_n = pandas.DataFrame([[ascii_lowercase[:n],0,[]]], columns = ["element","length","word"])
-    S_n = S_n.set_index("element")
+
+    #create table in database
+    path_name = __file__[:__file__.find("Demazure.py")-1]
+    rel_path_name = path.relpath(path_name)
+    db_name = path.join(rel_path_name,"S_nWords.sqlite")
+    with sqlite3.connect(db_name) as conn:
+        cur = conn.cursor()
+        cur.execute("""
+        CREATE TABLE S_nLengths (
+            element TEXT PRIMARY KEY,
+            n_value INT,
+            length INT
+        )
+        """)
+        cur.execute("""
+        CREATE TABLE S_nWords (
+            element TEXT,
+            n_value INT,
+            word LIST,
+            PRIMARY KEY (word,n_value),
+            FOREIGN KEY (element) REFERENCES S_nLengths(element),
+            FOREIGN KEY (n_value) REFERENCES S_nLengths(n_value)
+        )
+        """)
+        conn.commit()
+
+    #initialize tables
+    with sqlite3.connect(db_name) as conn:
+        cur = conn.cursor()
+        cur.execute("""
+        INSERT INTO S_nLengths (
+            n_value,
+            element,
+            length
+        )
+        VALUES (?,?,?)
+        """,(n,ascii_lowercase[:n],0))
+        cur.execute("""
+        INSERT INTO S_nWords (
+            n_value,
+            element,
+            word
+        )
+        VALUES (?,?,?)
+        """,(n,ascii_lowercase[:n],[]))
+        conn.commit()
+    #loop to fill table
     for length in range(dim):
-        build_from = S_n.loc[S_n.loc[:,"length"] == length]
-        for old_element in build_from.index:
-            old_word = list(S_n.at[old_element,"word"])
-            for i in range(1,n):
-                new_word = old_word+[i]
-                new_element = standard_product(new_word,n)
-                if new_element in S_n.index:
-                    pass
-                else:
-                    S_n = S_n.append(pandas.Series(data={"length":length+1,"word":new_word},
-                        name = new_element))
-    return S_n
+        with sqlite3.connect(db_name) as conn:
+            cur = conn.cursor()
+            cur.execute("""
+            SELECT element
+            FROM S_nLengths
+            WHERE n_value = ? AND length = ?
+            """,(n,length-1))
+            check = cur.fetchall()
+        with sqlite3.connect(db_name) as conn:
+            cur = conn.cursor()
+            cur.execute("""
+            SELECT element
+            FROM S_nLengths
+            WHERE n_value = ? and length = ?
+            """,(n,length))
+            build = cur.fetchall()
+        for old_element in build:
+            with sqlite3.connect(db_name) as conn:
+                cur = conn.cursor()
+                cur.execute("""
+                SELECT word
+                FROM S_nWords
+                WHERE n_value = ? and element = ?
+                """,(n,old_element))
+                old_words = cur.fetchall()
+            for word in old_words:
+                for i in range(1,n):
+                    new_word = word+[i]
+                    new_element = standard_product(new_word,n)
+                    if new_element in check:
+                        pass
+                    else:
+                        with sqlite3.connect(db_name) as conn:
+                            cur = conn.cursor()
+                            cur.execute("""
+                            INSERT INTO S_nLengths (
+                                n_value,
+                                element,
+                                length
+                            )
+                            VALUES (?,?,?)
+                            """,(n,new_element,length+1))
+                            conn.commit()
+                        with sqlite3.connect(db_name) as conn:
+                            cur = conn.cursor()
+                            cur.execute("""
+                            INSERT INTO S_nWords (
+                                n_value,
+                                element,
+                                word
+                            )
+                            VALUES (?,?,?)
+                            """,(n,new_element,new_word))
+    return True
 
 if __name__ == "__main__":
     import doctest
