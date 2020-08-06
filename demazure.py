@@ -427,6 +427,9 @@ def element_subwords(word,element):
         contains the subwords multpilying to the given word, and whether or not
         each word is reduced
     """
+    n = len(element)
+    subwords = subword_element_association(word,n)
+    
 
 if __name__ == "__main__":
     import doctest
