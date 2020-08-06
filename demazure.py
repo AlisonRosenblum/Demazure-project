@@ -4,6 +4,7 @@ import sqlite3
 from string import ascii_lowercase
 from os import path
 import numpy
+import pandas
 
 def identify_n(word):
     """
@@ -132,15 +133,15 @@ def create_element_cache(n):
     Raises
     ----------
     ValueError
-        if n is less than 2
+        if n is less than 1
 
     NotImplementedError
         if n is greater than 26
     """
     if not isinstance(n,int):
         raise TypeError("n must be an integer")
-    if n < 2:
-        raise ValueError("n must be greater than 2")
+    if n < 1:
+        raise ValueError("n must be greater than 1")
     if n > 26:
         raise NotImplementedError("module only implemented for $n\leq 26$")
     dim = sum(range(n))
@@ -310,8 +311,11 @@ def demazure_product(word,n=None):
 
     if word == []:
         return [[],ascii_lowercase[:n]]
-    product_word = [word[0]]
-    for i in word[1:]:
+    start = 0
+    while (word[start] == 0 and start < len(word)-1):
+        start += 1
+    product_word = [word[start]]
+    for i in word[(start+1):]:
         old_element = standard_product(product_word,n)
         with sqlite3.connect(db_name) as conn:
             cur = conn.cursor()
@@ -321,7 +325,7 @@ def demazure_product(word,n=None):
                 WHERE (n_value = ? AND element = ?)
             """,(n,old_element))
             old_length = cur.fetchall()[0][0]
-        new_element = standard_product(product_word + [word[i]],n)
+        new_element = standard_product(product_word + [i],n)
         with sqlite3.connect(db_name) as conn:
             cur = conn.cursor()
             cur.execute("""
@@ -331,20 +335,18 @@ def demazure_product(word,n=None):
             """,(n,new_element))
             new_length = cur.fetchall()[0][0]
         if old_length < new_length:
-            product_word = product_word + [word[i]]
+            product_word = product_word + [i]
     return product_word
 
-def subword(word,i):
+def subword(pos_data):
     """
     selects the ith subword of a word
 
     Parameters
     ----------
-    word : list or tuple
-        the word whose subword to find
-
-    i : int
-        the index of the subword (relative to binary digits)
+    pos_data : tuple
+        (word, i) where word is the word whose subwords to find and i is the
+        index of the subword (in a list of binary digits)
 
     Returns
     ----------
@@ -358,12 +360,13 @@ def subword(word,i):
 
     Examples
     ----------
-    >>> subword([1,1,1],3)
+    >>> subword(([1,1,1],3))
     [1, 1, 0]
 
-    >>> subword([4,1,2,3],11)
+    >>> subword(([4,1,2,3],11))
     [4, 1, 0, 3]
     """
+    word,i=pos_data
     wordlength = len(word)
     if wordlength >= 64:
         raise NotImplementedError("The word-length is too large")
@@ -374,11 +377,53 @@ def subword(word,i):
     places = places**numpy.arange(wordlength).astype(numpy.uint64)
     subword = (i*subword//places)%2
     subword = (subword*word).astype(numpy.int32)
-    return list(subword)
+    subword_py = [int(i) for i in subword]
+    return subword_py
 
-# def element_subwords(word,element,filename = None):
-#
+def subword_element_association(word, n=None):
+    """
+    determines the element associated with each subword of a word
 
+    Parameters
+    ----------
+    word : list
+        the word whose subwords to find
+
+    n : int (optional)
+        S_n in which word lives (autodetects if None)
+
+    Returns
+    ----------
+    pandas.DataFrame
+        contains all subwords, and their corresponding elements
+    """
+    word = [1,3,2]
+    subwords = pandas.Series([(word,i) for i in range(2**len(word))])
+    subwords = subwords.map(subword)
+    subwords
+    demazure_product([0,0,0,4])
+    elements = subwords.map(demazure_product)
+    elements
+
+def element_subwords(word,element):
+    """
+    finds all subwords of word that multiply to element under the Demazure product
+    indicates if said subword is a reduced word for the element
+
+    Parameters
+    ----------
+    word : list
+        the word whose subwords to search
+
+    element : str
+        the element of S_n to which the subwords should multiply
+
+    Returns
+    ----------
+    pandas.DataFrame
+        contains the subwords multpilying to the given word, and whether or not
+        each word is reduced
+    """
 
 if __name__ == "__main__":
     import doctest
