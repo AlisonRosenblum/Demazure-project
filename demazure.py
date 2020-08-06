@@ -28,9 +28,9 @@ def identify_n(word):
     """
     return max(word)+1
 
-def ob_join(separated):
+def str_join(separated):
     """
-    joins a list of objects into a single object
+    joins a list of strings into a single string
 
     Paramenters
     ----------
@@ -44,7 +44,7 @@ def ob_join(separated):
 
     Examples
     ----------
-    >>> ob_join(['a','b','c','d'])
+    >>> str_join(['a','b','c','d'])
     'abcd'
     """
     joined = ""
@@ -95,7 +95,7 @@ def standard_product(word, n=None):
             pass
         else:
             element[i-1],element[i]=element[i],element[i-1]
-    return ob_join(element)
+    return str_join(element)
 
 def create_element_cache(n):
     """
@@ -108,7 +108,8 @@ def create_element_cache(n):
     Returns
     ----------
     bool
-        true if completed successfully
+        true if completed successfully,
+        false if database already initialized for this n
 
     Raises
     ----------
@@ -134,17 +135,17 @@ def create_element_cache(n):
     with sqlite3.connect(db_name) as conn:
         cur = conn.cursor()
         cur.execute("""
-        CREATE TABLE Lengths (
+        CREATE TABLE IF NOT EXISTS Lengths (
             element TEXT PRIMARY KEY,
             n_value INT,
             length INT
         )
         """)
         cur.execute("""
-        CREATE TABLE Words (
+        CREATE TABLE IF NOT EXISTS Words (
             element TEXT,
             n_value INT,
-            word LIST,
+            word TEXT,
             PRIMARY KEY (word,n_value),
             FOREIGN KEY (element) REFERENCES Lengths(element),
             FOREIGN KEY (n_value) REFERENCES Lengths(n_value)
@@ -153,25 +154,29 @@ def create_element_cache(n):
         conn.commit()
 
     #initialize tables
-    with sqlite3.connect(db_name) as conn:
-        cur = conn.cursor()
-        cur.execute("""
-        INSERT INTO Lengths (
-            n_value,
-            element,
-            length
-        )
-        VALUES (?,?,?)
-        """,(n,ascii_lowercase[:n],0))
-        cur.execute("""
-        INSERT INTO Words (
-            n_value,
-            element,
-            word
-        )
-        VALUES (?,?,?)
-        """,(n,ascii_lowercase[:n],[]))
-        conn.commit()
+    try:
+        with sqlite3.connect(db_name) as conn:
+            cur = conn.cursor()
+            cur.execute("""
+            INSERT INTO Lengths (
+                n_value,
+                element,
+                length
+            )
+            VALUES (?,?,?)
+            """,(n,ascii_lowercase[:n],0))
+            cur.execute("""
+            INSERT INTO Words (
+                n_value,
+                element,
+                word
+            )
+            VALUES (?,?,?)
+            """,(n,ascii_lowercase[:n],""))
+            conn.commit()
+    except sqlite3.IntegrityError:
+        return False
+
     #loop to fill table
     for length in range(dim):
         with sqlite3.connect(db_name) as conn:
@@ -181,7 +186,7 @@ def create_element_cache(n):
             FROM Lengths
             WHERE n_value = ? AND length = ?
             """,(n,length-1))
-            check = cur.fetchall()
+            check = [i[0] for i in cur.fetchall()]
         with sqlite3.connect(db_name) as conn:
             cur = conn.cursor()
             cur.execute("""
@@ -189,7 +194,7 @@ def create_element_cache(n):
             FROM Lengths
             WHERE n_value = ? and length = ?
             """,(n,length))
-            build = cur.fetchall()
+            build = [i[0] for i in cur.fetchall()]
         for old_element in build:
             with sqlite3.connect(db_name) as conn:
                 cur = conn.cursor()
@@ -198,35 +203,48 @@ def create_element_cache(n):
                 FROM Words
                 WHERE n_value = ? and element = ?
                 """,(n,old_element))
-                old_words = cur.fetchall()
+                old_words = [i[0] for i in cur.fetchall()]
             for word in old_words:
+                word = word.split(",")
+                if word == [""]:
+                    word = []
+                word = [int(j) for j in word]
                 for i in range(1,n):
-                    new_word = word+[i]
+                    new_word = word + [i]
                     new_element = standard_product(new_word,n)
                     if new_element in check:
                         pass
                     else:
-                        with sqlite3.connect(db_name) as conn:
-                            cur = conn.cursor()
-                            cur.execute("""
-                            INSERT INTO Lengths (
-                                n_value,
-                                element,
-                                length
-                            )
-                            VALUES (?,?,?)
-                            """,(n,new_element,length+1))
-                            conn.commit()
-                        with sqlite3.connect(db_name) as conn:
-                            cur = conn.cursor()
-                            cur.execute("""
-                            INSERT INTO Words (
-                                n_value,
-                                element,
-                                word
-                            )
-                            VALUES (?,?,?)
-                            """,(n,new_element,new_word))
+                        try:
+                            with sqlite3.connect(db_name) as conn:
+                                cur = conn.cursor()
+                                cur.execute("""
+                                INSERT INTO Lengths (
+                                    n_value,
+                                    element,
+                                    length
+                                )
+                                VALUES (?,?,?)
+                                """,(n,new_element,length+1))
+                                conn.commit()
+                        except sqlite3.IntegrityError:
+                            pass
+                        new_word = [str(j)+"," for j in word]+[str(i)]
+                        new_word = str_join(new_word)
+                        try:
+                            with sqlite3.connect(db_name) as conn:
+                                cur = conn.cursor()
+                                cur.execute("""
+                                INSERT INTO Words (
+                                    n_value,
+                                    element,
+                                    word
+                                )
+                                VALUES (?,?,?)
+                                """,(n,new_element,new_word))
+                                conn.commit()
+                        except sqlite3.IntegrityError:
+                            pass
     return True
 
 if __name__ == "__main__":
