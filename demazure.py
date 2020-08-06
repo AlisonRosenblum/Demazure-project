@@ -397,13 +397,16 @@ def subword_element_association(word, n=None):
     pandas.DataFrame
         contains all subwords, and their corresponding elements
     """
-    word = [1,3,2]
-    subwords = pandas.Series([(word,i) for i in range(2**len(word))])
+    if n == None:
+        n = identify_n(word)
+
+    subwords = pandas.Series([(word,i) for i in range(2**len(word))],name="subwords")
     subwords = subwords.map(subword)
-    subwords
-    demazure_product([0,0,0,4])
-    elements = subwords.map(demazure_product)
-    elements
+    elements = pandas.Series(subwords.map(demazure_product),name="element")
+    elements = elements.apply(standard_product,n=n)
+    sws_to_elements = pandas.DataFrame(subwords)
+    sws_to_elements = sws_to_elements.join(elements)
+    return sws_to_elements
 
 def element_subwords(word,element):
     """
