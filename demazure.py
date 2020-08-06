@@ -26,7 +26,10 @@ def identify_n(word):
     >>> identify_n([1,2,3,4,5,4,3])
     6
     """
-    return max(word)+1
+    if word == []:
+        return 1
+    else:
+        return max(word)+1
 
 def str_join(separated):
     """
@@ -97,6 +100,20 @@ def standard_product(word, n=None):
             element[i-1],element[i]=element[i],element[i-1]
     return str_join(element)
 
+def obtain_db_name():
+    """
+    obtains the input needed to access the database storing the elements of S_n
+
+    Returns
+    ----------
+    str :
+        the relative path name for S_n.sqlite
+    """
+    # path_name = __file__[:__file__.find("Demazure.py")-1]
+    # rel_path_name = path.relpath(path_name)
+    # return path.join(rel_path_name,"S_n.sqlite")
+    return "S_n.sqlite"
+
 def create_element_cache(n):
     """
     creates a csv containing a list of elements of S_n
@@ -128,10 +145,7 @@ def create_element_cache(n):
     dim = sum(range(n))
 
     #create table in database
-    # path_name = __file__[:__file__.find("Demazure.py")-1]
-    # rel_path_name = path.relpath(path_name)
-    # db_name = path.join(rel_path_name,"S_n.sqlite")
-    db_name = "S_n.sqlite"
+    db_name = obtain_db_name()
     with sqlite3.connect(db_name) as conn:
         cur = conn.cursor()
         cur.execute("""
@@ -246,6 +260,78 @@ def create_element_cache(n):
                         except sqlite3.IntegrityError:
                             pass
     return True
+
+def demazure_product(word,n=None):
+    """
+    computes the Demazure product of the elements of word
+
+    Paramenters
+    ----------
+    word : list or tuple
+        the generators whose Demazure product to take
+
+    Returns
+    --------
+    new_word : list
+        the product as a list
+
+    Notes
+    ----------
+    the Demazure product of a group element w and a generator s is given by
+        ws if l(ws)>l(w)
+        w if l(ws)<l(w)
+    (where l(w) is the length of the element w)
+    d-fold products are the unique associative extension of this product.
+
+    Examples
+    ----------
+    >>> demazure_product([1,1,1,1],2)
+    [1]
+
+    >>> demazure_product([1,2,1,2])
+    [1, 2, 1]
+    """
+    if n == None:
+        n = identify_n(word)
+    db_name = obtain_db_name()
+
+    #check if S_n.sqlite has been filled for this n
+    with sqlite3.connect(db_name) as conn:
+        cur = conn.cursor()
+        cur.execute("""
+        SELECT element
+        FROM Lengths
+        WHERE (n_value = ? AND length = ?)
+        """,(n,0))
+        check_existance = cur.fetchall()
+    if check_existance == []:
+        create_element_cache(n)
+
+    if word == []:
+        return [[],ascii_lowercase[:n]]
+    product_word = [word[0]]
+    for i in word[1:]:
+        old_element = standard_product(product_word,n)
+        with sqlite3.connect(db_name) as conn:
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT length
+                FROM Lengths
+                WHERE (n_value = ? AND element = ?)
+            """,(n,old_element))
+            old_length = cur.fetchall()[0][0]
+        new_element = standard_product(product_word + [word[i]],n)
+        with sqlite3.connect(db_name) as conn:
+            cur = conn.cursor()
+            cur.execute("""
+            SELECT length
+            FROM Lengths
+            WHERE (n_value = ? AND element = ?)
+            """,(n,new_element))
+            new_length = cur.fetchall()[0][0]
+        if old_length < new_length:
+            product_word = product_word + [word[i]]
+    return product_word
 
 if __name__ == "__main__":
     import doctest
