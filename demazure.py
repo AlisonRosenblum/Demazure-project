@@ -3,6 +3,7 @@
 import sqlite3
 from string import ascii_lowercase
 from os import path
+import numpy
 
 def identify_n(word):
     """
@@ -35,7 +36,7 @@ def str_join(separated):
     """
     joins a list of strings into a single string
 
-    Paramenters
+    Parameters
     ----------
     separated : list
         all elements strings
@@ -265,7 +266,7 @@ def demazure_product(word,n=None):
     """
     computes the Demazure product of the elements of word
 
-    Paramenters
+    Parameters
     ----------
     word : list or tuple
         the generators whose Demazure product to take
@@ -332,6 +333,52 @@ def demazure_product(word,n=None):
         if old_length < new_length:
             product_word = product_word + [word[i]]
     return product_word
+
+def subword(word,i):
+    """
+    selects the ith subword of a word
+
+    Parameters
+    ----------
+    word : list or tuple
+        the word whose subword to find
+
+    i : int
+        the index of the subword (relative to binary digits)
+
+    Returns
+    ----------
+    list
+        the ith subword
+
+    Raises
+    ----------
+    NotImplementedError
+        if the wordlength exceeds 63
+
+    Examples
+    ----------
+    >>> subword([1,1,1],3)
+    [1, 1, 0]
+
+    >>> subword([4,1,2,3],11)
+    [4, 1, 0, 3]
+    """
+    wordlength = len(word)
+    if wordlength >= 64:
+        raise NotImplementedError("The word-length is too large")
+    word = numpy.array(word)
+
+    subword = numpy.ones((wordlength),numpy.int8)
+    places = 2*numpy.ones((wordlength),numpy.uint64)
+    places = places**numpy.arange(wordlength).astype(numpy.uint64)
+    subword = (i*subword//places)%2
+    subword = (subword*word).astype(numpy.int32)
+    return list(subword)
+
+# def element_subwords(word,element,filename = None):
+#
+
 
 if __name__ == "__main__":
     import doctest
