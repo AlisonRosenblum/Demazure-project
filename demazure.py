@@ -112,10 +112,9 @@ def obtain_db_name():
     str :
         the relative path name for S_n.sqlite
     """
-    # path_name = __file__[:__file__.find("Demazure.py")-1]
-    # rel_path_name = path.relpath(path_name)
-    # return path.join(rel_path_name,"S_n.sqlite")
-    return "S_n.sqlite"
+    path_name = __file__[:__file__.find("Demazure.py")-1]
+    rel_path_name = path.relpath(path_name)
+    return path.join(rel_path_name,"S_n.sqlite")
 
 def create_element_cache(n):
     """
