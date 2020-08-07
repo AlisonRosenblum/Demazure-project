@@ -143,6 +143,8 @@ def create_element_cache(n):
         raise TypeError("n must be an integer")
     if n < 1:
         raise ValueError("n must be greater than 1")
+    if n > 4:
+        print("Creating cache. This may take a while...")
     if n > 26:
         raise NotImplementedError("module only implemented for $n\leq 26$")
     dim = sum(range(n))
@@ -321,9 +323,9 @@ def demazure_product(word,n=None):
         with sqlite3.connect(db_name) as conn:
             cur = conn.cursor()
             cur.execute("""
-                SELECT length
-                FROM Lengths
-                WHERE (n_value = ? AND element = ?)
+            SELECT length
+            FROM Lengths
+            WHERE (n_value = ? AND element = ?)
             """,(n,old_element))
             old_length = cur.fetchall()[0][0]
         new_element = standard_product(product_word + [i],n)
@@ -509,9 +511,71 @@ def element_subwords(word,element,filename=None):
         slice.to_csv(filename,index=False,mode="a")
         return filename
 
+def non_trivial_subwords(word,n=None,filename=None):
+    """
+    produces a list of all elements mulitplied to by a nonreduced subword of word
+    includes all subwords mulitplying to each of these elements under the Demazure
+    product, and indications of which are reduced
 
+    Parameters
+    ----------
+    word : list
+        the word whose subwords to search
 
+    n : int (optional)
+        S_n in which the word lives
+        if None, autodetects (not recommended)
 
+    filename : str (optional)
+        the file in which to store the data
+        if None, returns as a string
+
+    Returns
+    ----------
+    str
+        filename if given
+        otherwise, the data as a string
+    """
+    if n == None:
+        n = identify_n(word)
+
+    all_subwords = subword_element_association(word, n)
+    db_name = obtain_db_name()
+    with sqlite3.connect(db_name) as conn:
+        cur = conn.cursor()
+        cur.execute("""
+        SELECT element
+        FROM Lengths
+        WHERE n_value = ?
+        """,(n,))
+        elements = [i[0] for i in cur.fetchall()]
+    if filename == None:
+        report = "In {}:\n\n".format(word)
+    else:
+        with open(filename, "w") as f:
+            write = writer(f)
+            write.writerow(["In {}:".format(word)])
+            write.writerow([""])
+    for element in elements:
+        element_subwords = process_element(all_subwords, element)
+        if element_subwords.loc[:,"reduced"].all():
+            pass
+        else:
+            if filename == None:
+                report += element + "\n"
+                report += element_subwords.to_csv(sep = "\t", index = False)
+                report += "\n"
+            else:
+                with open(filename, "a") as f:
+                    write = writer(f)
+                    write.writerow([element])
+                element_subwords.to_csv(filename,index=False,mode="a")
+                with open(filename, "a") as f:
+                    f.write("\n")
+    if filename == None:
+        return report
+    else:
+        return filename
 
 if __name__ == "__main__":
     import doctest

@@ -4,12 +4,12 @@ Functionality
 -list of all reduced words for an element of S_n? (done)
 -Demazure product of generators (done)
 -print/evaluate f_w for a given expression w
--list of subwords of a given word multiplying to a given element
--list of subwords producing non-trivial fibers for a given word
+-list of subwords of a given word multiplying to a given element (done)
+-list of subwords producing non-trivial fibers for a given word (done)
 -graphing of images/fibers?
--auto-detect value of n
+-auto-detect value of n (done)
 
 Display
--print and file output options
+-print and file output options (done)
 -git
 -bash/interactive bash/interactive web version
