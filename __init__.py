@@ -1,1 +1,1 @@
-from .Demazure import *
+from .demazure import *
