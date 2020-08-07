@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import sqlite3
-from string import ascii_lowercase
-from os import path
 import numpy
 import pandas
+from string import ascii_lowercase
+from os import path
+from csv import writer
 
 def identify_n(word):
     """
@@ -408,7 +409,69 @@ def subword_element_association(word, n=None):
     sws_to_elements = sws_to_elements.join(elements)
     return sws_to_elements
 
-def element_subwords(word,element):
+def calculate_expression_length(word):
+    """
+    calculates the expression length (number of non-zero elements) for a given word
+
+    Parameters
+    ----------
+    word : list
+        the word whose expression length to calculate
+
+    Returns
+    ----------
+    int
+        the expression length of word
+    """
+    expression = [i for i in word if i != 0]
+    return len(expression)
+
+def process_element(subword_table, element):
+    """
+    slices a table of words to those multiplying to a given element
+    also indicates which words are reduced
+
+    Parameters
+    ----------
+    subword_table : pandas.DataFrame
+        contains all subwords of some word, and the elements they mulitply to under the Demazure product
+
+    element : string
+        the element to search for
+
+    Returns
+    ----------
+    pandas.DataFrame
+        contains the subwords that multiply to element, and an indication of whether
+        each subword is reduced
+
+    Raises
+    ----------
+    ValueError
+        if expression is not an element of S_n
+    """
+    element_sws = subword_table.loc[subword_table.loc[:,"element"] == element,"subwords"]
+    element_sws = pandas.Series(element_sws, name="elements")
+    db_name = obtain_db_name()
+    with sqlite3.connect(db_name) as conn:
+        cur = conn.cursor()
+        cur.execute("""
+        SELECT length
+        FROM Lengths
+        WHERE element = ?
+        """,(element,))
+        element_length = cur.fetchall()
+    if element_length == []:
+        raise ValueError("{} not in S_n".format(element))
+    else:
+        element_length = element_length[0][0]
+    expression_lengths = element_sws.map(calculate_expression_length)
+    reduced = pandas.Series(expression_lengths == element_length,name="reduced")
+    element_sws = pandas.DataFrame(element_sws)
+    element_sws = element_sws.join(reduced)
+    return element_sws
+
+def element_subwords(word,element,filename=None):
     """
     finds all subwords of word that multiply to element under the Demazure product
     indicates if said subword is a reduced word for the element
@@ -421,15 +484,34 @@ def element_subwords(word,element):
     element : str
         the element of S_n to which the subwords should multiply
 
+    filename : str (optional)
+        the file in which to store the data
+        if None, returns data as a string
+
     Returns
     ----------
-    pandas.DataFrame
-        contains the subwords multpilying to the given word, and whether or not
-        each word is reduced
+    str :
+        filename if given
+        otherwise, the data as a string
     """
     n = len(element)
     subwords = subword_element_association(word,n)
-    
+    slice = process_element(subwords,element)
+
+    if filename == None:
+        report = element + "\n"
+        report += slice.to_csv(sep = "\t", index = False)
+        return report
+    else:
+        with open(filename, "w") as f:
+            write = writer(f)
+            write.writerow([element])
+        slice.to_csv(filename,index=False,mode="a")
+        return filename
+
+
+
+
 
 if __name__ == "__main__":
     import doctest
