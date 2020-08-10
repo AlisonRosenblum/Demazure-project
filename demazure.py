@@ -2,10 +2,13 @@
 
 import sqlite3
 import numpy
+import sympy.matrices
 import pandas
 from string import ascii_lowercase
 from os import path
 from csv import writer
+from sympy import symbols
+
 
 def identify_n(word):
     """
@@ -103,6 +106,78 @@ def standard_product(word, n=None):
             element[i-1],element[i]=element[i],element[i-1]
     return str_join(element)
 
+def s(i,t=symbols("t"),n=None):
+    """
+    creates the matrix s_i(t) (n-dimensional)
+
+    Parameters
+    ----------
+    i : int
+        the generator this matrix corresponds to
+
+    t : symbol or int or float
+        the value at which to evaluate s_i(t)
+
+    n : int (optional)
+        the dimension of the matrix
+        if None, autodetects from i (not recommended)
+
+    Returns
+    ----------
+    sympy.matrices.dense.MutableDenseMatrix
+        the matrix representing s_i(t) in dimension n
+
+    Examples
+    ----------
+    >>> s(2,1,3)
+    sympy.Matrix([[1,0,0],[0,1,1],[0,0,1]])
+    """
+    if n == None:
+        n = identify_n([i])
+    if i<0 or i>=n:
+        raise ValueError("i must be between 0 and n")
+
+    s = sympy.eye(n)
+    if i == 0:
+        return s
+    s[i-1,i] = t
+    return s
+
+def f_w(word, n = None, point = None):
+    """
+    creates the matrix giving f_(i_1,\ldots,i_d)(t_1,\ldots,t_d)
+
+    Parameters
+    ----------
+    word : list or tuple
+        the word corresponding to this map
+
+    n : int (optional)
+        the dimension of the matrix output
+        if None, autodetects dimension
+
+    point : list or tuple (optional)
+        a point in $R^d$ at which to evaluate the function
+
+    Returns
+    ----------
+    sympy.matrices.dense.MutableDenseMatrix :
+    the matrix giving f_w(t) or f_w(a) if a is supplied, in dimension n
+    """
+    if n == None:
+        n = identify_n(word)
+
+    t = [sympy.symbols("t_{}".format(j+1)) for j in range(len(word))]
+    f = sympy.eye(n)
+    for i in range(len(word)):
+        f *= s(word[i],t[i],n)
+    if point != None:
+        subs_dict = {}
+        for i in range(len(word)):
+            subs_dict[t[i]] = point[i]
+        f = f.subs(subs_dict)
+    return f
+
 def obtain_db_name():
     """
     obtains the input needed to access the database storing the elements of S_n
@@ -112,6 +187,10 @@ def obtain_db_name():
     str :
         the relative path name for S_n.sqlite
     """
+    #for testing
+    if __name__ == "__main__":
+        return "S_n.sqlite"
+
     path_name = __file__[:__file__.find("demazure.py")-1]
     rel_path_name = path.relpath(path_name)
     return path.join(rel_path_name,"S_n.sqlite")

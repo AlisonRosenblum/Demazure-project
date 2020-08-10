@@ -3,7 +3,7 @@ Functionality
 -lengths of expessions in S_n (done)
 -list of all reduced words for an element of S_n? (done)
 -Demazure product of generators (done)
--print/evaluate f_w for a given expression w
+-print/evaluate f_w for a given expression w (done)
 -list of subwords of a given word multiplying to a given element (done)
 -list of subwords producing non-trivial fibers for a given word (done)
 -graphing of images/fibers?
