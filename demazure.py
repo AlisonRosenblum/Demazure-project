@@ -55,6 +55,9 @@ def str_join(separated):
     ----------
     >>> str_join(['a','b','c','d'])
     'abcd'
+
+    >>> str_join(['abc','d','ef'])
+    'abcdef'
     """
     joined = ""
     for i in separated:
@@ -129,8 +132,17 @@ def s(i,t=symbols("t"),n=None):
 
     Examples
     ----------
-    >>> s(2,1,3)
-    sympy.Matrix([[1,0,0],[0,1,1],[0,0,1]])
+    >>> s(2,4.5)
+    Matrix([
+    [1, 0,   0],
+    [0, 1, 4.5],
+    [0, 0,   1]])
+
+    >>> s(1,n=3)
+    Matrix([
+    [1, t, 0],
+    [0, 1, 0],
+    [0, 0, 1]])
     """
     if n == None:
         n = identify_n([i])
@@ -163,6 +175,29 @@ def f_w(word, n = None, point = None):
     ----------
     sympy.matrices.dense.MutableDenseMatrix :
     the matrix giving f_w(t) or f_w(a) if a is supplied, in dimension n
+
+    Examples
+    ----------
+    >>> f_w([1,2,1])
+    Matrix([
+    [1, t_1 + t_3, t_1*t_2],
+    [0,         1,     t_2],
+    [0,         0,       1]])
+
+    >>> f_w([2,1], n=4, point=[symbols('x'),symbols('y')])
+    Matrix([
+    [1, y, 0, 0],
+    [0, 1, x, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, 1]])
+
+    >>> f_w([4,1,2,4], point=[1,2,3,4])
+    Matrix([
+    [1, 2, 6, 0, 0],
+    [0, 1, 3, 0, 0],
+    [0, 0, 1, 0, 0],
+    [0, 0, 0, 1, 5],
+    [0, 0, 0, 0, 1]])
     """
     if n == None:
         n = identify_n(word)
@@ -373,6 +408,9 @@ def demazure_product(word,n=None):
 
     >>> demazure_product([1,2,1,2])
     [1, 2, 1]
+
+    >>> demazure_product([1,2,3])
+    [1, 2, 3]
     """
     if n == None:
         n = identify_n(word)
@@ -477,6 +515,15 @@ def subword_element_association(word, n=None):
     ----------
     pandas.DataFrame
         contains all subwords, and their corresponding elements
+
+    Examples
+    ----------
+    >>> subword_element_association([1,2])
+      subwords element
+    0   [0, 0]     abc
+    1   [1, 0]     bac
+    2   [0, 2]     acb
+    3   [1, 2]     cab
     """
     if n == None:
         n = identify_n(word)
@@ -502,6 +549,20 @@ def calculate_expression_length(word):
     ----------
     int
         the expression length of word
+
+    Examples
+    ----------
+    >>> calculate_expression_length([1,1,1])
+    3
+
+    >>> calculate_expression_length([])
+    0
+
+    >>> calculate_expression_length([0])
+    0
+
+    >>> calculate_expression_length([0,1,0,1,0])
+    2
     """
     expression = [i for i in word if i != 0]
     return len(expression)
@@ -529,6 +590,21 @@ def process_element(subword_table, element):
     ----------
     ValueError
         if expression is not an element of S_n
+
+    Examples
+    ----------
+    >>> process_element(pandas.DataFrame([[[0,0],"abc"],[[1,0],"bac"],[[0,1],"bac"],[[1,1],"bac"]],
+    ...    columns = ["subwords","element"]),"bac")
+      elements  reduced
+    1   [1, 0]     True
+    2   [0, 1]     True
+    3   [1, 1]    False
+
+    >>> process_element(pandas.DataFrame([[[0,0],"abc"],[[1,0],"bac"],[[0,1],"bac"],[[1,1],"bac"]],
+    ...    columns = ["subwords","element"]),"acb")
+    Empty DataFrame
+    Columns: [elements, reduced]
+    Index: []
     """
     element_sws = subword_table.loc[subword_table.loc[:,"element"] == element,"subwords"]
     element_sws = pandas.Series(element_sws, name="elements")
@@ -573,6 +649,15 @@ def element_subwords(word,element,filename=None):
     str :
         filename if given
         otherwise, the data as a string
+
+    Examples
+    ----------
+    >>> print(element_subwords([1,2,1],"bac"))
+    bac
+      elements  reduced
+     [1, 0, 0]     True
+     [0, 0, 1]     True
+     [1, 0, 1]    False
     """
     n = len(element)
     subwords = subword_element_association(word,n)
@@ -580,7 +665,7 @@ def element_subwords(word,element,filename=None):
 
     if filename == None:
         report = element + "\n"
-        report += slice.to_csv(sep = "\t", index = False)
+        report += slice.to_string(index=False)
         return report
     else:
         with open(filename, "w") as f:
@@ -613,6 +698,23 @@ def non_trivial_subwords(word,n=None,filename=None):
     str
         filename if given
         otherwise, the data as a string
+
+    Examples
+    ----------
+    >>> print(non_trivial_subwords([1,3,1]))
+    In [1, 3, 1]:
+    <BLANKLINE>
+    bacd
+      elements  reduced
+     [1, 0, 0]     True
+     [0, 0, 1]     True
+     [1, 0, 1]    False
+    badc
+      elements  reduced
+     [1, 3, 0]     True
+     [0, 3, 1]     True
+     [1, 3, 1]    False
+    <BLANKLINE>
     """
     if n == None:
         n = identify_n(word)
@@ -641,7 +743,7 @@ def non_trivial_subwords(word,n=None,filename=None):
         else:
             if filename == None:
                 report += element + "\n"
-                report += element_subwords.to_csv(sep = "\t", index = False)
+                report += element_subwords.to_string(index = False)
                 report += "\n"
             else:
                 with open(filename, "a") as f:
