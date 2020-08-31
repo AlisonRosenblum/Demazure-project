@@ -6,11 +6,11 @@ Tools in python for working with Demazure products and related tasks
 
 This module contains tools for computing examples related to a current research
 project, which seeks to extend the work of Davis, Hersh, and Miller described in
-"[Fibers of Maps to Totally Nonnegative Spaces](https://arxiv.org/abs/1903.01420)",
+"[Fibers of Maps to Totally Nonnegative Spaces](https://arxiv.org/abs/1903.01420),"
 focusing here exclusively on type A. Specific utilities include
 
 - computing the Demazure product of a tuple of generators
-- computing the map f_(i_1,\ldots,i_d) from R^d_{>= 0} to SL_n(R) for a
+- computing the map f_(i_1,\ldots,i_d) from R^d_{>= 0} to SL(n, R) for a
   provided word (i_1,...,i_d), and evaluating it at a given point
 - finding the subwords of a given word that mulitply to a given element of S_n
   under the Demazure product
@@ -57,11 +57,13 @@ s_{i_1}\cdots s_{i_d} is an **expression** for w, and call (i_1,\ldots,i_d) a
 may contain place-holding zeroes but expressions do not, but in practice will favor the
 abbreviated word notation both for words and expressions.
 
-The **length** of an element w in W is the smallest d such that w=s_{i_1}\cdots s_{i_d}
-for some s_{i_1}, ... ,s_{i_d} in S. We will say (again non-standardly) that the
-**expression length** of an expression s_{i_1}\cdots s_{i_d} is d, and that for a
-word Q=(i_1, ... ,i_d), the **word length** of Q is d and the expression length of
-Q is the number of non-zero integers among i_1, ..., i_d.
+The **length** of an element w in W, denoted l(w), is the smallest d such that
+w=s_{i_1}\cdots s_{i_d} for some s_{i_1}, ... ,s_{i_d} in S. We will say (again
+non-standardly) that the **expression length** of an expression s_{i_1}\cdots s_{i_d}
+is d, and that for a word Q=(i_1, ... ,i_d), the **word length** of Q is d and the
+expression length of Q is the number of non-zero integers among i_1, ..., i_d. An
+expression is **reduced** if its expression length is equal to the length of the
+element to which it mulitplies.
 
 Adapted from "Introduction to Total Positivity" by Lusztig:
 
@@ -74,3 +76,11 @@ diagonal, t in position i,i+1, and zeroes elsewhere). See docstrings for more co
 For a word (i_1, ..., i_d), define a map **f_(i_1,...,i_d)** from R^d to G by
 f_(i_1,...,i_d)(t_1,...,t_d)=x_{i_1}(t_1)\cdots x_{i_d}(t_d), taking x_0=Id. This
 module ultimately hopes to aid in the study of the properties of these maps.
+
+Taken from "Fibers of Maps to Totally Nonnegative Spaces" by Davis, Hersh, and Miller:
+
+The **Demazure product** of a group element w and a generator s is given by
+    ws if l(ws)>l(w)
+    w if l(ws)<l(w)
+There is a unique associative extension of this product, by which we define the
+d-fold Demazure product of a tuple of generators. For examples, see the docstrings.

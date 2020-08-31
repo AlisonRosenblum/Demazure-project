@@ -575,7 +575,8 @@ def process_element(subword_table, element):
     Parameters
     ----------
     subword_table : pandas.DataFrame
-        contains all subwords of some word, and the elements they mulitply to under the Demazure product
+        contains all subwords of some word, and the elements they mulitply to
+        under the Demazure product
 
     element : string
         the element to search for
