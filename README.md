@@ -7,10 +7,10 @@ Tools in python for working with Demazure products and related tasks
 This module contains tools for computing examples related to a current research
 project, which seeks to extend the work of Davis, Hersh, and Miller described in
 "[Fibers of Maps to Totally Nonnegative Spaces](https://arxiv.org/abs/1903.01420)",
-focusing here exclusively on type $A$. Specific utilities include
+focusing here exclusively on type A. Specific utilities include
 
 - computing the Demazure product of a tuple of generators
-- computing the map $f_(i_1,\ldots,i_d)$ from R^d_{>= 0} to SL_n(R) for a
+- computing the map f_(i_1,\ldots,i_d) from R^d_{>= 0} to SL_n(R) for a
   provided word (i_1,...,i_d), and evaluating it at a given point
 - finding the subwords of a given word that mulitply to a given element of S_n
   under the Demazure product
