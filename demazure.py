@@ -66,7 +66,7 @@ def str_join(separated):
 
 def standard_product(word, n=None):
     """
-    if word = $(i_1,\ldots,i_d)$, performs $s_{i_1}\circ\cdots\circs_{i_d}(abcd...)$
+    if word = $(i_1,\ldots,i_d)$, performs $s_{i_1}\circ\cdots\circ s_{i_d}(abcd...)$
 
     Parameters
     ----------
@@ -109,9 +109,9 @@ def standard_product(word, n=None):
             element[i-1],element[i]=element[i],element[i-1]
     return str_join(element)
 
-def s(i,t=symbols("t"),n=None):
+def x(i,t=symbols("t"),n=None):
     """
-    creates the matrix s_i(t) (n-dimensional)
+    creates the matrix x_i(t) (n-dimensional)
 
     Parameters
     ----------
@@ -119,7 +119,7 @@ def s(i,t=symbols("t"),n=None):
         the generator this matrix corresponds to
 
     t : symbol or int or float
-        the value at which to evaluate s_i(t)
+        the value at which to evaluate x_i(t)
 
     n : int (optional)
         the dimension of the matrix
@@ -128,17 +128,17 @@ def s(i,t=symbols("t"),n=None):
     Returns
     ----------
     sympy.matrices.dense.MutableDenseMatrix
-        the matrix representing s_i(t) in dimension n
+        the matrix representing x_i(t) in dimension n
 
     Examples
     ----------
-    >>> s(2,4.5)
+    >>> x(2,4.5)
     Matrix([
     [1, 0,   0],
     [0, 1, 4.5],
     [0, 0,   1]])
 
-    >>> s(1,n=3)
+    >>> x(1,n=3)
     Matrix([
     [1, t, 0],
     [0, 1, 0],
@@ -162,7 +162,7 @@ def f_w(word, n = None, point = None):
     Parameters
     ----------
     word : list or tuple
-        the word corresponding to this map
+        the word defining this map
 
     n : int (optional)
         the dimension of the matrix output
@@ -205,7 +205,7 @@ def f_w(word, n = None, point = None):
     t = [sympy.symbols("t_{}".format(j+1)) for j in range(len(word))]
     f = sympy.eye(n)
     for i in range(len(word)):
-        f *= s(word[i],t[i],n)
+        f *= x(word[i],t[i],n)
     if point != None:
         subs_dict = {}
         for i in range(len(word)):
