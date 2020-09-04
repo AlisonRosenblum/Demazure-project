@@ -213,6 +213,138 @@ def f_w(word, n = None, point = None):
         f = f.subs(subs_dict)
     return f
 
+def nil(q,t):
+    """
+    Performs the change of coordiantes corresponding to a modified nil move
+
+    Specifically, $(t_1,\ldots, t_q, t_{q+1}, t_{q+2},\ldots t_s)$ is mapped to
+    $(t_1,\ldots, t_q + t_{q+1}, t_{q+2},\ldots t_s)$
+
+    Parameters
+    ----------
+    q : int
+        position at which to perform the change of coordinates
+
+    t : list/tuple or int
+        the coordinates (sympy expressions) on which to perform the move
+        if t = s an int, performs on $(t_1,\ldots, t_s)$
+
+    Returns
+    ----------
+    list
+        the new coordinates
+
+    Examples
+    ----------
+    >>> nil(1,5)
+    [t_1 + t_2, t_3, t_4, t_5]
+
+    >>> nil(1,nil(1,5))
+    [t_1 + t_2 + t_3, t_4, t_5]
+
+    >>> nil(3,4)
+    [t_1, t_2, t_3 + t_4]
+
+    >>> nil(3,5)
+    [t_1, t_2, t_3 + t_4, t_5]
+    """
+    if q<=0:
+        raise ValueError("Cannot perform nil move at position {}".format(q))
+
+    if isinstance(t,int):
+        start = [sympy.symbols("t_{}".format(j+1)) for j in range(t)]
+    else:
+        start = list(t)
+
+    return start[0:q-1]+[start[q-1]+start[q]]+start[q+1:len(start)]
+
+def brd(q,t):
+    """
+    Performs the change of coordiantes corresponding to a braid move of length three
+
+    Specifically, $(t_1,\ldots, t_q, t_{q+1}, t_{q+2},\ldots t_s)$ is mapped to
+    $(t_1,\ldots, \frac{t_{q+1}t_{q+2}}{t_q + t_{q+2}}, t_q+t_{q+2},
+    \frac{t_qt_{q+1}}{t_q + t_{q+2}}\ldots t_s)$
+
+    Parameters
+    ----------
+    q : int
+        position at which to perform the change of coordinates
+
+    t : list/tuple or int
+        the coordinates (sympy expressions) on which to perform the move
+        if t = s an int, performs on $(t_1,\ldots, t_s)$
+
+    Returns
+    ----------
+    list
+        the new coordinates
+
+    Examples
+    ----------
+    >>> brd(1,5)
+    [t_2*t_3/(t_1 + t_3), t_1 + t_3, t_1*t_2/(t_1 + t_3), t_4, t_5]
+
+    >>> brd(2,nil(2,5))
+    [t_1, t_4*t_5/(t_2 + t_3 + t_5), t_2 + t_3 + t_5, t_4*(t_2 + t_3)/(t_2 + t_3 + t_5)]
+    """
+    if q<=0:
+        raise ValueError("Cannot perform nil move at position {}".format(q))
+
+    if isinstance(t,int):
+        start = [sympy.symbols("t_{}".format(j+1)) for j in range(t)]
+    else:
+        start = list(t)
+
+    start[q-1], start[q], start[q+1] = start[q]*start[q+1]/(start[q-1]+start[q+1]), \
+        start[q-1]+start[q+1], start[q-1]*start[q]/(start[q-1]+start[q+1])
+
+    return start
+
+def com(q,t):
+    """
+    Performs the change of coordiantes corresponding to a commutation (short braid) move
+
+    Specifically, $(t_1,\ldots, t_q, t_{q+1},\ldots t_s)$ is mapped to
+    $(t_1,\ldots, t_{q+1} + t_q,\ldots t_s)$
+
+    Parameters
+    ----------
+    q : int
+        position at which to perform the change of coordinates
+
+    t : list/tuple or int
+        the coordinates (sympy expressions) on which to perform the move
+        if t = s an int, performs on $(t_1,\ldots, t_s)$
+
+    Returns
+    ----------
+    list
+        the new coordinates
+
+    Examples
+    ----------
+    >>> com(1,3)
+    [t_2, t_1, t_3]
+
+    >>> com(2,4)
+    [t_1, t_3, t_2, t_4]
+
+    >>> com(1, brd(1,3))
+    [t_1 + t_3, t_2*t_3/(t_1 + t_3), t_1*t_2/(t_1 + t_3)]
+    """
+    if q<=0:
+        raise ValueError("Cannot perform nil move at position {}".format(q))
+
+    if isinstance(t,int):
+        start = [sympy.symbols("t_{}".format(j+1)) for j in range(t)]
+    else:
+        start = list(t)
+
+    start[q-1], start[q] = start[q], start[q-1]
+
+    return start
+
 def obtain_db_name():
     """
     obtains the input needed to access the database storing the elements of S_n
